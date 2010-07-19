@@ -25,73 +25,35 @@ static unsigned npot(unsigned x)
 // It starts out equal to SS_EMPTY (all ones) and will fill up to SS_FULL.
 typedef unsigned long ss_t;
 
-#ifdef __ARM__
-// on ARM, count leading zeros is cheaper than count trailing zeros
-#define REVERSE_SS
-#endif
-
-// find an unmarked location
-#ifdef REVERSE_SS
-
-#define SIGNBIT 0x80000000
-
-// Find a free slot in this slot set.
+// Find a free slot.
 static inline unsigned ss_find(ss_t x)
 {
-	return __builtin_clz(x);
+	return __builtin_ctz(x);
 }
 
 // Test whether a given slot is free.
 static inline bool ss_test(ss_t x, unsigned idx)
 {
-	ss_t mask = SIGNBIT;
-	mask >>= idx;
+	ss_t mask = 1;
+	mask <<= idx;
 	return (x & mask) == 0;
 }
 
 // Mark a given slot as occupied.
 static inline ss_t ss_mark(ss_t x, unsigned idx)
 {
-	ss_t mask = SIGNBIT;
-	mask >>= idx;
+	ss_t mask = 1;
+	mask <<= idx;
 	return x & ~mask;
 }
 
 // Mark a given slot as free.
 static inline ss_t ss_unmark(ss_t x, unsigned idx)
 {
-	ss_t mask = SIGNBIT;
-	mask >>= idx;
-	return x | mask;
-}
-#else
-// see comments above
-static inline unsigned ss_find(ss_t x)
-{
-	return __builtin_ctz(x);
-}
-
-static inline bool ss_test(ss_t x, unsigned idx)
-{
-	ss_t mask = 1;
-	mask <<= idx;
-	return (x & mask) == 0;
-}
-
-static inline ss_t ss_mark(ss_t x, unsigned idx)
-{
-	ss_t mask = 1;
-	mask <<= idx;
-	return x & ~mask;
-}
-
-static inline ss_t ss_unmark(ss_t x, unsigned idx)
-{
 	ss_t mask = 1;
 	mask <<= idx;
 	return x | mask;
 }
-#endif
 
 const static ss_t SS_EMPTY = -1UL;
 const static ss_t SS_FULL = 0UL;
